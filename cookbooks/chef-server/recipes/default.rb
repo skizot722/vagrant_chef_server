@@ -90,15 +90,6 @@ execute "create-knife-client-user" do
   not_if "knife client show knife-client-user", :user => 'vagrant'
 end
 
-# Create a new app user account for use on the application vm.
-execute "create-app-chef-client-user" do
-  cwd "/home/vagrant"
-  environment ({'HOME' => '/home/vagrant', 'USER' => "vagrant"})
-  user "vagrant"
-  command "knife client create app-user -d -a -f /tmp/app-user.pem"
-  not_if "knife client show app-user", :user => 'vagrant'
-end
-
 # Copy knife-client-user.pem to /vagrant after it's created, so that the host
 # has access to it. This allows knife to be successfully configured on the host.
 execute "copy-knife-client-key" do
@@ -107,11 +98,10 @@ execute "copy-knife-client-key" do
   not_if "test ! -e /tmp/knife-client-user.pem"
 end
 
-# Copy app-user.pem to /vagrant after it's created, so that the application vm
-# has access to it. This allows chef-client to authenticate successfully on
-# the application vm.
-execute "copy-app-user-key" do
-  user "vagrant"
-  command "cp /tmp/app-user.pem /vagrant"
-  not_if "test ! -e /tmp/app-user.pem"
+# Copy validation.pem to /vagrant after it's created, so that the test node
+# has access to it.
+execute "copy-validation-key" do
+  user "root"
+  command "cp /etc/chef/validation.pem /vagrant/"
+  not_if "test ! -e /vagrant/validation.pem"
 end

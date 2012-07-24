@@ -55,7 +55,7 @@ Vagrant::Config.run do |config|
       chef.validation_key_path = "validation.pem"
 
       # Recipes for test_node application.
-      chef.add_recipe("ruby")
+      #chef.add_recipe("ruby")
     end
   end
 end
