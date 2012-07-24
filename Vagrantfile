@@ -16,44 +16,45 @@ Vagrant::Config.run do |config|
   # Download the iso file from remote webserver
   config.vbguest.no_remote = false
 
-  # We don't need much memory for either machine.
-  #config.vm.customize ["modifyvm", :id, "--memory", 256]
-
   # Chef server vm.
   config.vm.define :chef_server do |chef_server|
+    # Uncomment the following if you don't want the chef server vm using the
+    # default 512 MB  of memory.
+    #config.vm.customize ["modifyvm", :id, "--memory", 256]
+
     # Hostname to set on the node
     chef_server.vm.host_name="chef-server"
 
     # Hostonly network interface, used for internode communication
     chef_server.vm.network :hostonly, "10.0.0.10"
 
+    # Bootstrap this virtual machine using chef solo and the local cookbook.
     chef_server.vm.provision :chef_solo do |chef|
       chef.log_level = :debug
       chef.cookbooks_path = "cookbooks"
       chef.add_recipe "chef-server"
     end
 
+    # Set up port forwards for host access to chef server.
     chef_server.vm.forward_port 4000, 44000
     chef_server.vm.forward_port 4040, 44040
   end
 
   # Chef client vm.
-  config.vm.define :bwmgr_test do |bwmgr|
+  config.vm.define :test_node do |test_node|
     # Hostname to set on the node
-    bwmgr.vm.host_name="bwmgr-test"
+    test_node.vm.host_name="test-node"
 
     # Hostonly network interface, used for internode communication
-    bwmgr.vm.network :hostonly, "10.0.0.11"
+    test_node.vm.network :hostonly, "10.0.0.11"
 
-    bwmgr.vm.provision :chef_client do |chef|
+    # Use chef server to provision this test node.
+    test_node.vm.provision :chef_client do |chef|
       # Config for chef server.
       chef.chef_server_url = "http://10.0.0.10:4000"
       chef.validation_key_path = "validation.pem"
-#       chef.validation_client_name = "app-user"
-#       chef.client_key_path = "app-user.pem"
-#       chef.node_name = "bwmgr_test"
 
-      # Recipes for bwmgr application.
+      # Recipes for test_node application.
       chef.add_recipe("ruby")
     end
   end
