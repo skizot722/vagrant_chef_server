@@ -2,3 +2,4 @@ tmp
 sl6-64-chefserver-0.10.box
 squeeze64.box
 knife-client-user.pem
+validation.pem

@@ -103,5 +103,5 @@ end
 execute "copy-validation-key" do
   user "root"
   command "cp /etc/chef/validation.pem /vagrant/"
-  not_if "test ! -e /vagrant/validation.pem"
+  not_if "test -e /vagrant/validation.pem"
 end
