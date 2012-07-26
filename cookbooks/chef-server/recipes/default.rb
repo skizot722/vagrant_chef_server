@@ -1,5 +1,6 @@
 ENV['DEBIAN_FRONTEND'] = "noninteractive"
 
+# Add the Opscode repository to the apt sources list.
 bash "add-opscode-repo" do
   user "root"
   code <<-CODE
@@ -11,24 +12,31 @@ bash "add-opscode-repo" do
   not_if "sudo test -e /etc/apt/sources.list.d/opscode.list && grep 'deb http://apt.opscode.com' /etc/apt/sources.list.d/opscode.list"
 end
 
+# Now that the Opscode repo has been added, update apt.
 execute "apt-update" do
   command "apt-get update"
   action :run
 end
 
+# Install the opscode keyring to keep repo key up-to-date.
 package "opscode-keyring" do
   action :install
   options "-o Dpkg::Options::=\"--force-confnew\""
 end
 
+# Install the debcon-utils package, which is needed for non-interactive install
+# of chef-server.
 package "debconf-utils" do
   action :install
 end
 
+# Install expect package, as it's needed to configure knife non-interactively.
 package "expect" do
   action :install
 end
 
+# Use debconf-set-selections to set question/answer pairs for non-interactive
+# chef-server install.
 bash "set-config-options-chef-packages" do
   user "root"
   code <<-CODE
@@ -38,20 +46,24 @@ bash "set-config-options-chef-packages" do
   CODE
 end
 
+# Install the chef client package.
 package "chef" do
   action :install
 end
 
+# Install the chef-server package.
 package "chef-server" do
   action :install
 end
 
+# Create chef directory for vagrant user.
 directory "/home/vagrant/.chef" do
   owner "vagrant"
   group "vagrant"
   action :create
 end
 
+# Copy keys to shared folder so that it can be accessed by test node and host.
 bash "cp-chef-pems" do
   user "root"
   code <<-CODE
@@ -60,12 +72,15 @@ bash "cp-chef-pems" do
   CODE
 end
 
+# Make sure everything inside the chef directory for the vagrant user is owned
+# by the vagrant user.
 execute "chown-home-chef" do
   user "root"
   command "chown -R vagrant /home/vagrant/.chef"
   action :run
 end
 
+# Create knife-expect.sh script for configuring knife.
 cookbook_file "/tmp/knife-expect.sh" do
   source "knife-expect.sh"
   owner "vagrant"
@@ -73,6 +88,7 @@ cookbook_file "/tmp/knife-expect.sh" do
   mode 0700
 end
 
+# Configure knife using knife-expect expect script.
 execute "configure-knife" do
   cwd "/home/vagrant"
   environment ({'HOME' => '/home/vagrant', 'USER' => "vagrant"})
